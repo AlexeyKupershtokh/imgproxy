@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -123,6 +124,25 @@ func FromFile(path, desc string, secopts security.Options) (*ImageData, error) {
 	}
 
 	imgdata, err := readAndCheckImage(f, int(fi.Size()), secopts)
+	if err != nil {
+		return nil, fmt.Errorf("Can't read %s: %s", desc, err)
+	}
+
+	return imgdata, nil
+}
+
+func FromReader(f io.ReadSeeker, desc string, secopts security.Options) (*ImageData, error) {
+	size, err := f.Seek(0, io.SeekEnd)
+	if err != nil {
+		return nil, fmt.Errorf("Can't read %s: %s", desc, err)
+	}
+
+	_, err = f.Seek(0, io.SeekStart)
+	if err != nil {
+		return nil, fmt.Errorf("Can't read %s: %s", desc, err)
+	}
+
+	imgdata, err := readAndCheckImage(f, int(size), secopts)
 	if err != nil {
 		return nil, fmt.Errorf("Can't read %s: %s", desc, err)
 	}
